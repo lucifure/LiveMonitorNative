@@ -1,0 +1,2 @@
+rootProject.name = "LiveMonitor"
+include ':app'
