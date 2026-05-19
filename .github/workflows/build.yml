@@ -22,6 +22,21 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Install imagemagick
+        run: sudo apt-get install -y imagemagick
+
+      - name: Convert and copy icons
+        run: |
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
+          convert preview.webp -resize 72x72 app/src/main/res/mipmap-hdpi/ic_launcher.png
+          convert preview.webp -resize 96x96 app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          convert preview.webp -resize 144x144 app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          convert preview.webp -resize 192x192 app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          echo "Icons created successfully"
+
       - name: Make gradlew executable
         run: chmod +x gradlew
 
