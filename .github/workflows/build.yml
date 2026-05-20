@@ -41,6 +41,13 @@ jobs:
           convert preview.webp -resize 144x144 app/src/main/res/mipmap-xxhdpi/ic_launcher.png
           convert preview.webp -resize 192x192 app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
+      - name: Download yt-dlp and package as native library
+        run: |
+          mkdir -p app/src/main/jniLibs/arm64-v8a
+          curl -L "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_aarch64" -o app/src/main/jniLibs/arm64-v8a/libytdlp.so
+          chmod +x app/src/main/jniLibs/arm64-v8a/libytdlp.so
+          echo "yt-dlp size: $(wc -c < app/src/main/jniLibs/arm64-v8a/libytdlp.so) bytes"
+
       - name: Build Debug APK
         run: gradle assembleDebug
 
