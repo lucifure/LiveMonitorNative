@@ -245,10 +245,25 @@ public class MonitorService extends Service {
 
     // ── Download yt-dlp binary ────────────────────────────────────────────────
     private File getOrDownloadYtdlp() {
-        File ytdlp = new File(getFilesDir(), "yt-dlp");
-        if (ytdlp.exists() && ytdlp.canExecute()) {
-            sendLog("yt-dlp ready.", "success");
-            return ytdlp;
+        // Use app's own files dir with exec permission via chmod
+        // Use nativeLibraryDir — this partition allows execution on Android
+        File nativeDir = new File(getApplicationInfo().nativeLibraryDir);
+        File execDir = new File(getApplicationInfo().dataDir + "/exec");
+        execDir.mkdirs();
+
+        // Try to use a symlink approach via nativeLibraryDir
+        // Actually use dataDir/exec with chmod via Runtime
+        File ytdlp = new File(execDir, "yt-dlp");
+
+        if (ytdlp.exists()) {
+            // Force executable permission using chmod via shell
+            try {
+                new ProcessBuilder("chmod", "777", ytdlp.getAbsolutePath()).start().waitFor();
+            } catch (Exception ignored) {}
+            if (ytdlp.canExecute()) {
+                sendLog("yt-dlp ready.", "success");
+                return ytdlp;
+            }
         }
 
         sendLog("Downloading yt-dlp binary (~10MB)...", "warning");
@@ -259,11 +274,12 @@ public class MonitorService extends Service {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(30000);
             conn.setReadTimeout(60000);
+            conn.setInstanceFollowRedirects(true);
             conn.connect();
 
             InputStream input = conn.getInputStream();
             FileOutputStream output = new FileOutputStream(ytdlp);
-            byte[] buffer = new byte[4096];
+            byte[] buffer = new byte[8192];
             int bytesRead;
             while ((bytesRead = input.read(buffer)) != -1) {
                 output.write(buffer, 0, bytesRead);
@@ -271,9 +287,14 @@ public class MonitorService extends Service {
             output.close();
             input.close();
 
-            ytdlp.setExecutable(true);
-            sendLog("yt-dlp downloaded successfully!", "success");
-            return ytdlp;
+            // Set executable using multiple methods
+            ytdlp.setExecutable(true, false);
+            try {
+                new ProcessBuilder("chmod", "777", ytdlp.getAbsolutePath()).start().waitFor();
+            } catch (Exception ignored) {}
+
+            sendLog("yt-dlp downloaded! Size: " + ytdlp.length() + " bytes", "success");
+            return ytdlp.canExecute() ? ytdlp : null;
         } catch (Exception e) {
             sendLog("Failed to download yt-dlp: " + e.getMessage(), "error");
             return null;
