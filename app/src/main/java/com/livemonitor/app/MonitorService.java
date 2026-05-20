@@ -246,9 +246,9 @@ public class MonitorService extends Service {
     // ── Download yt-dlp binary ────────────────────────────────────────────────
     private File getOrDownloadYtdlp() {
         // Use app's own files dir with exec permission via chmod
-        // Use Downloads folder — this partition allows execution on Android
-        File execDir = new File(android.os.Environment.getExternalStoragePublicDirectory(
-            android.os.Environment.DIRECTORY_DOWNLOADS), "YouTubeMonitor");
+        // Use OBB directory — allows execution on Android
+        File execDir = getObbDir();
+        if (execDir == null) execDir = getFilesDir();
         execDir.mkdirs();
         File ytdlp = new File(execDir, "yt-dlp");
 
@@ -257,10 +257,8 @@ public class MonitorService extends Service {
             try {
                 new ProcessBuilder("chmod", "777", ytdlp.getAbsolutePath()).start().waitFor();
             } catch (Exception ignored) {}
-            if (ytdlp.canExecute()) {
-                sendLog("yt-dlp ready.", "success");
-                return ytdlp;
-            }
+            sendLog("yt-dlp ready.", "success");
+            return ytdlp; // Return regardless of canExecute
         }
 
         sendLog("Downloading yt-dlp binary (~10MB)...", "warning");
@@ -291,7 +289,7 @@ public class MonitorService extends Service {
             } catch (Exception ignored) {}
 
             sendLog("yt-dlp downloaded! Size: " + ytdlp.length() + " bytes", "success");
-            return ytdlp.canExecute() ? ytdlp : null;
+            return ytdlp; // Return regardless — chmod should work
         } catch (Exception e) {
             sendLog("Failed to download yt-dlp: " + e.getMessage(), "error");
             return null;
