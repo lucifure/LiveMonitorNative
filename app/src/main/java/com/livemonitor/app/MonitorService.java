@@ -246,13 +246,10 @@ public class MonitorService extends Service {
     // ── Download yt-dlp binary ────────────────────────────────────────────────
     private File getOrDownloadYtdlp() {
         // Use app's own files dir with exec permission via chmod
-        // Use nativeLibraryDir — this partition allows execution on Android
-        File nativeDir = new File(getApplicationInfo().nativeLibraryDir);
-        File execDir = new File(getApplicationInfo().dataDir + "/exec");
+        // Use Downloads folder — this partition allows execution on Android
+        File execDir = new File(android.os.Environment.getExternalStoragePublicDirectory(
+            android.os.Environment.DIRECTORY_DOWNLOADS), "YouTubeMonitor");
         execDir.mkdirs();
-
-        // Try to use a symlink approach via nativeLibraryDir
-        // Actually use dataDir/exec with chmod via Runtime
         File ytdlp = new File(execDir, "yt-dlp");
 
         if (ytdlp.exists()) {
