@@ -246,12 +246,9 @@ public class MonitorService extends Service {
     // ── Download yt-dlp binary ────────────────────────────────────────────────
     private File getOrDownloadYtdlp() {
         // Use app's own files dir with exec permission via chmod
-        // Use OBB directory — allows execution on Android
-        File execDir = getObbDir();
-        if (execDir == null) execDir = getFilesDir();
-        execDir.mkdirs();
-        File ytdlp = new File(execDir, "yt-dlp");
-
+        // Use nativeLibraryDir — the ONLY executable location on Android
+        String nativeDir = getApplicationInfo().nativeLibraryDir;
+        File ytdlp = new File(nativeDir, "libytdlp.so");
         if (ytdlp.exists()) {
             // Force executable permission using chmod via shell
             try {
