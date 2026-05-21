@@ -245,52 +245,19 @@ public class MonitorService extends Service {
 
     // ── Download yt-dlp binary ────────────────────────────────────────────────
     private File getOrDownloadYtdlp() {
-        // Use app's own files dir with exec permission via chmod
-        // Use nativeLibraryDir — the ONLY executable location on Android
+        // yt-dlp is bundled as libytdlp.so in the APK native library directory
+        // This is the ONLY executable location on non-rooted Android
         String nativeDir = getApplicationInfo().nativeLibraryDir;
         File ytdlp = new File(nativeDir, "libytdlp.so");
+
         if (ytdlp.exists()) {
-            // Force executable permission using chmod via shell
-            try {
-                new ProcessBuilder("chmod", "777", ytdlp.getAbsolutePath()).start().waitFor();
-            } catch (Exception ignored) {}
-            sendLog("yt-dlp ready.", "success");
-            return ytdlp; // Return regardless of canExecute
+            sendLog("yt-dlp ready at: " + ytdlp.getAbsolutePath(), "success");
+            return ytdlp;
         }
 
-        sendLog("Downloading yt-dlp binary (~10MB)...", "warning");
-        String downloadUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_aarch64";
-
-        try {
-            URL url = new URL(downloadUrl);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(30000);
-            conn.setReadTimeout(60000);
-            conn.setInstanceFollowRedirects(true);
-            conn.connect();
-
-            InputStream input = conn.getInputStream();
-            FileOutputStream output = new FileOutputStream(ytdlp);
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = input.read(buffer)) != -1) {
-                output.write(buffer, 0, bytesRead);
-            }
-            output.close();
-            input.close();
-
-            // Set executable using multiple methods
-            ytdlp.setExecutable(true, false);
-            try {
-                new ProcessBuilder("chmod", "777", ytdlp.getAbsolutePath()).start().waitFor();
-            } catch (Exception ignored) {}
-
-            sendLog("yt-dlp downloaded! Size: " + ytdlp.length() + " bytes", "success");
-            return ytdlp; // Return regardless — chmod should work
-        } catch (Exception e) {
-            sendLog("Failed to download yt-dlp: " + e.getMessage(), "error");
-            return null;
-        }
+        sendLog("yt-dlp not found in: " + nativeDir, "error");
+        sendLog("Files in nativeDir: " + java.util.Arrays.toString(new File(nativeDir).list()), "error");
+        return null;
     }
 
     // ── HTTP GET ──────────────────────────────────────────────────────────────
